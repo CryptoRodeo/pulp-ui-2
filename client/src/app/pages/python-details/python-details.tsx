@@ -1,8 +1,11 @@
 import React from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import {
-  Button,
+  Breadcrumb,
+  BreadcrumbItem,
   Bullseye,
+  Button,
   Flex,
   FlexItem,
   Label,
@@ -16,31 +19,37 @@ import {
   TabTitleText,
   Title,
 } from "@patternfly/react-core";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, CopyIcon } from "@patternfly/react-icons";
+import { CopyIcon } from "@patternfly/react-icons";
+
 import { DocumentMetadata } from "@app/components/DocumentMetadata";
 import {
-  useFetchUniquePackageMetadata,
   useFetchPackageContent,
+  useSuspenseUniquePackageMetadata,
 } from "@app/queries/packages";
-import { PathParam, useRouteParams } from "@app/Routes";
 import {
-  OverviewTab,
-  VersionsTab,
+  distributionBasePathQueryParam,
+  PathParam,
+  Paths,
+  useRouteParams,
+} from "@app/Routes";
+
+import {
   FilesTab,
+  OverviewTab,
   PackageSearchBar,
+  VersionsTab,
 } from "./components";
 
 export const PythonDetails: React.FC = () => {
   const distributionBasePath = useRouteParams(PathParam.DISTRIBUTION_BASE_PATH);
   const packageName = useRouteParams(PathParam.PYTHON_ID);
-  const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
   const versionParam = searchParams.get("version") ?? undefined;
 
   const [activeTabKey, setActiveTabKey] = React.useState<number>(0);
 
-  const { pkg, isFetching } = useFetchUniquePackageMetadata({
+  const { pkg, isFetching } = useSuspenseUniquePackageMetadata({
     distributionPath: distributionBasePath,
     packageName,
     packageVersion: versionParam,
@@ -124,28 +133,33 @@ export const PythonDetails: React.FC = () => {
   return (
     <>
       <DocumentMetadata title={info.name ?? "Python"} />
-      <PageSection
-        style={{
-          backgroundColor: "var(--pf-v6-global--palette--blue-400)",
-          paddingBlock: "var(--pf-v6-global--spacer--md)",
-        }}
-      >
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-          <PackageSearchBar
-            distributionBasePath={distributionBasePath}
-            currentPackageName={packageName}
-          />
-        </div>
+      <PageSection type="breadcrumb">
+        <Flex>
+          <Flex flex={{ default: "flex_1" }}>
+            <FlexItem>
+              <Breadcrumb>
+                <BreadcrumbItem>
+                  <Link
+                    to={{
+                      pathname: Paths.python,
+                      search: `?${distributionBasePathQueryParam}=${distributionBasePath}`,
+                    }}
+                  >
+                    Packages
+                  </Link>
+                </BreadcrumbItem>
+                <BreadcrumbItem isActive>Package details</BreadcrumbItem>
+              </Breadcrumb>
+            </FlexItem>
+          </Flex>
+          <Flex flex={{ default: "flex_2" }}>
+            <FlexItem>
+              <PackageSearchBar distributionBasePath={distributionBasePath} />
+            </FlexItem>
+          </Flex>
+        </Flex>
       </PageSection>
       <PageSection variant={PageSectionVariants.default}>
-        <Button
-          variant="link"
-          icon={<ArrowLeftIcon />}
-          onClick={() => navigate("/")}
-          style={{ paddingLeft: 0, marginBottom: "1rem" }}
-        >
-          Back to Packages
-        </Button>
         <Flex
           justifyContent={{ default: "justifyContentSpaceBetween" }}
           alignItems={{ default: "alignItemsCenter" }}
@@ -215,14 +229,14 @@ export const PythonDetails: React.FC = () => {
           onSelect={(_event, tabIndex) => setActiveTabKey(tabIndex as number)}
         >
           <Tab eventKey={0} title={<TabTitleText>Overview</TabTitleText>}>
-            <TabContent>
+            <TabContent id="info-tab-section">
               <TabContentBody hasPadding>
                 <OverviewTab info={info} />
               </TabContentBody>
             </TabContent>
           </Tab>
           <Tab eventKey={1} title={<TabTitleText>Versions</TabTitleText>}>
-            <TabContent>
+            <TabContent id="versions-tab-section">
               <TabContentBody hasPadding>
                 <VersionsTab
                   releases={releases ?? {}}
@@ -234,7 +248,7 @@ export const PythonDetails: React.FC = () => {
             </TabContent>
           </Tab>
           <Tab eventKey={2} title={<TabTitleText>Files</TabTitleText>}>
-            <TabContent>
+            <TabContent id="files-tab-section">
               <TabContentBody hasPadding>
                 <FilesTab
                   releases={releases ?? {}}

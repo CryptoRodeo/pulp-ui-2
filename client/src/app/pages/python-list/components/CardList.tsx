@@ -17,6 +17,7 @@ import {
   Select,
   SelectList,
   SelectOption,
+  Skeleton,
   Stack,
   StackItem,
   Toolbar,
@@ -32,11 +33,13 @@ import type { DistributionResponse } from "@app/client";
 import { ConditionalDataListBody } from "@app/components/DataListControls/ConditionalDataListBody";
 import { FilterToolbar, FilterType } from "@app/components/FilterToolbar";
 import { SimplePagination } from "@app/components/SimplePagination";
+import { TablePersistenceKeyPrefixes } from "@app/Constants";
 import { useLocalTableControls } from "@app/hooks/table-controls";
 import { useFetchUniquePackages } from "@app/queries/packages";
 import { Paths } from "@app/Routes";
 import { toCamelCase } from "@app/utils/utils";
 
+import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { WithPackage } from "./WithPackage";
 
 type ICardListProps = {
@@ -54,7 +57,13 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
 
   // Table
   const tableControls = useLocalTableControls({
+    persistenceKeyPrefix: TablePersistenceKeyPrefixes.python_wheels,
     tableName: "python-table",
+    persistTo: {
+      filter: "urlParams",
+      pagination: "sessionStorage",
+      sort: "sessionStorage",
+    },
     idProperty: "name",
     items: packages,
     isLoading: isFetching,
@@ -182,7 +191,7 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
                       distribution={distribution}
                       packageName={item.name}
                     >
-                      {({ pkg }) => {
+                      {({ pkg, isFetching }) => {
                         return (
                           <>
                             <CardHeader
@@ -196,47 +205,74 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
                                   <Content component="h4">{item.name}</Content>
                                 </FlexItem>
                                 <FlexItem>
-                                  <Label isCompact>{pkg?.info?.version}</Label>
+                                  <LoadingWrapper
+                                    isFetching={isFetching}
+                                    isFetchingState={
+                                      <Skeleton fontSize="sm" width="50px" />
+                                    }
+                                  >
+                                    <Label isCompact>
+                                      {pkg?.info?.version}
+                                    </Label>
+                                  </LoadingWrapper>
                                 </FlexItem>
                               </Flex>
                             </CardHeader>
                             <CardBody>
-                              <Content component="small">
-                                {pkg?.info?.summary}
-                              </Content>
+                              <LoadingWrapper
+                                isFetching={isFetching}
+                                isFetchingState={<Skeleton fontSize="sm" />}
+                              >
+                                <Content component="small">
+                                  {pkg?.info?.summary}
+                                </Content>
+                              </LoadingWrapper>
                             </CardBody>
                             <CardFooter>
                               <Flex spaceItems={{ default: "spaceItemsSm" }}>
                                 <FlexItem>
-                                  <Icon>
-                                    <UserIcon />
-                                  </Icon>{" "}
-                                  {pkg && (
-                                    <Truncate
-                                      maxCharsDisplayed={35}
-                                      content={
-                                        pkg?.info?.author ||
-                                        pkg?.info?.author_email ||
-                                        pkg?.info?.maintainer_email ||
-                                        "Unknown"
-                                      }
-                                    />
-                                  )}
-                                </FlexItem>
-                                <FlexItem>
-                                  <Icon>
-                                    <CertificateIcon />
-                                  </Icon>{" "}
-                                  {pkg && (
-                                    <Truncate
-                                      maxCharsDisplayed={35}
-                                      content={
-                                        pkg?.info?.license ||
-                                        pkg?.info?.license_expression ||
-                                        "Unknown"
-                                      }
-                                    />
-                                  )}
+                                  <LoadingWrapper
+                                    isFetching={isFetching}
+                                    isFetchingState={
+                                      <Skeleton fontSize="sm" width="350px" />
+                                    }
+                                  >
+                                    <Flex
+                                      spaceItems={{ default: "spaceItemsSm" }}
+                                    >
+                                      <FlexItem>
+                                        <Icon>
+                                          <UserIcon />
+                                        </Icon>{" "}
+                                        {pkg && (
+                                          <Truncate
+                                            maxCharsDisplayed={35}
+                                            content={
+                                              pkg?.info?.author ||
+                                              pkg?.info?.author_email ||
+                                              pkg?.info?.maintainer_email ||
+                                              "Unknown"
+                                            }
+                                          />
+                                        )}
+                                      </FlexItem>
+                                      <FlexItem>
+                                        <Icon>
+                                          <CertificateIcon />
+                                        </Icon>{" "}
+                                        {pkg && (
+                                          <Truncate
+                                            maxCharsDisplayed={35}
+                                            content={
+                                              pkg?.info?.license ||
+                                              pkg?.info?.license_expression ||
+                                              "Unknown"
+                                            }
+                                          />
+                                        )}
+                                      </FlexItem>
+                                    </Flex>
+                                  </LoadingWrapper>
                                 </FlexItem>
                                 <FlexItem align={{ default: "alignRight" }}>
                                   <ClipboardCopy
